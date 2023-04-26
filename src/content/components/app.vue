@@ -3,7 +3,7 @@
 		<div v-if="!visible" style="position: relative">
 			<div class="button-box" v-drag draggable="false">
 					<el-button class="button-badge" circle v-on:dblclick="visible = !visible" />
-					<div style="text-align: center">性能监视器</div>
+					<div style="text-align: center">性能监视器(双击打开)</div>
 			</div>
 		</div>
 	</transition>
@@ -223,7 +223,7 @@ export default defineComponent({
 .button-box {
 	border-radius: 50%;
 	position: fixed;
-	bottom: 20px;
+	bottom: 50px;
 	left: 20px;
 	width: 80px;
 	height: 80px;
