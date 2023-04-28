@@ -6,20 +6,17 @@ import ElementPlus from 'element-plus'
 // injectJsInsert()
 function joinContent (element) {
 	const join = document.getElementById('joinContentApp')
-	console.log(join)
 	if (join === null){
 		const link = document.createElement('link')
 		link.rel = 'stylesheet'
 		link.href = '//unpkg.com/element-plus/dist/index.css'
 		document.head.appendChild(link)
-		const rootDom = document.getElementById('root')
-		rootDom.style.position = 'absolute'
-		rootDom.style.width = '100%'
-		rootDom.style.height = '100%'
 		const div = document.createElement('div')
 		div.id = 'joinContentApp'
+		div.style.zIndex = '4000'
+		div.style.position = 'fixed'
 		document.body.appendChild(div)
-		console.log(div)
+		div.ins
 		const app = createApp(element)
 		app.use(ElementPlus)
 		app.mount('#joinContentApp')
