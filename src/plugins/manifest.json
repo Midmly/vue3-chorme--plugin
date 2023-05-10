@@ -8,9 +8,9 @@
 		"default_icon": "assets/images/icon48.png",
 		"default_popup": "popup.html"
 	},
-	"permissions": [],
+	"permissions": ["tabs"],
 	"background": {
-		"scripts": ["js/chunk-vendors.js", "js/background.js"]
+		"scripts": ["js/background.js"]
 	},
 	"icons": {
 		"16": "assets/images/icon16.png",

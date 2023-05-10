@@ -42,8 +42,39 @@
 						<span class="error-row">{{ ">100ms" }}</span>
 					</span>
 					<span style="margin-left: 1rem;">总条数：{{ tableData.length }}</span>
+					<el-popover placement="bottom" :width="400" trigger="click" :popper-style="{zIndex: 6000}" popper-class="network-info">
+						<template #reference>
+							<el-button style="margin-left: 16px" text bg>网络信息</el-button>
+						</template>
+						<el-descriptions title="网络信息" size="small" column="2">
+							<template #extra>
+								<el-button type="success" size="small" @click="htmlToImage('network-info')">导出PNG</el-button>
+							</template>
+							<el-descriptions-item label="公网IP">
+								{{ ipData.ip }}
+							</el-descriptions-item>
+							<el-descriptions-item label="国家">
+								{{ ipData.country }}
+							</el-descriptions-item>
+							<el-descriptions-item label="州/省">
+								{{ ipData.region }}
+							</el-descriptions-item>
+							<el-descriptions-item label="城市">
+								{{ ipData.city }}
+							</el-descriptions-item>
+							<el-descriptions-item label="时区">
+								{{ ipData.timezone }}
+							</el-descriptions-item>
+							<el-descriptions-item label="经纬度">
+								{{ ipData.longitude }} , {{ ipData.latitude }}
+							</el-descriptions-item>
+							<el-descriptions-item label="ISP">
+								{{ ipData.isp }}
+							</el-descriptions-item>
+						</el-descriptions>
+					</el-popover>
 					<el-button style="float: right" type="success" @click="closeCard"
-					>隐藏页面</el-button
+					>隐藏</el-button
 					>
 				</template>
 				<el-table
@@ -74,6 +105,7 @@
 
 <script>
 import {defineComponent} from "vue";
+import html2canvas from "html2canvas";
 
 export default defineComponent({
 	data(){
@@ -98,13 +130,57 @@ export default defineComponent({
 				}
 			],
 			selectedType: 'resource',
-			tableData: []
+			tableData: [],
+			ipData: {
+				organization: '',
+				longitude: 0,
+				city: '',
+				timezone: '',
+				isp: '',
+				offset: 0,
+				region: '',
+				asn: 0,
+				asn_organization: '',
+				country: '',
+				ip: '',
+				latitude: 0,
+				continent_code: '',
+				country_code: '',
+				region_code: ''
+			},
 		}
 	},
-	mounted() {
-		// this.startMonitor()
+	created() {
+		chrome.runtime.onMessage.addListener(this.getIpData)
 	},
 	methods: {
+		htmlToImage(val){
+			// 获取要转换为图片的 DOM 元素
+			const dom = document.getElementsByClassName(val);
+			if (dom.length===0) {
+				return
+			}
+       // 使用 html2canvas 将 DOM 转换为 Canvas
+			html2canvas(dom[0]).then(canvas => {
+				// 生成图片 URL 或 Blob 对象
+				const url = canvas.toDataURL();
+				canvas.toBlob(function (blob){
+					// 创建并设置下载链接
+					const a = document.createElement('a');
+					a.download = 'network.png';
+					a.href = url || URL.createObjectURL(blob);
+					// 触发下载事件
+					a.click();
+				});
+			}).catch( e=> {
+				console.log(e)
+			});
+		},
+		getIpData(val) {
+			if (val.cmd === "IpData") {
+				this.ipData = val.data
+			}
+		},
 		// eslint-disable-next-line no-unused-vars
 		tableRowStyle({ row, rowIndex }) {
 			if (row.requestTime <= 50) {
@@ -139,6 +215,7 @@ export default defineComponent({
 			this.tableData = []
 		},
 		downloadData(){
+			this.downloadIpData()
 			let csvContent = "data:text/csv;charset=utf-8,";
 			const headerRow = '请求路径,类型,域名解析ms,tcp建连ms,ssl建连ms,请求耗时ms,响应耗时ms,传输大小kb,首包时间ms\r\n';
 			csvContent += headerRow;
@@ -149,6 +226,17 @@ export default defineComponent({
 			const link = document.createElement('a');
 			link.href = encodeURI(csvContent);
 			link.download = "data.csv";
+			link.click();
+		},
+		downloadIpData(){
+			let csvContent = "data:text/csv;charset=utf-8,key,value\r\n";
+			Object.keys(this.ipData).forEach(key => {
+				const value = this.ipData[key];
+				csvContent += `${key},"${value}"\r\n`
+			});
+			const link = document.createElement('a');
+			link.href = encodeURI(csvContent);
+			link.download = "networkInfo.csv";
 			link.click();
 		}
 	},
@@ -197,6 +285,10 @@ export default defineComponent({
 				return false
 			}
 		}
+	},
+	unmounted() {
+		// 注销监听器
+
 	}
 })
 </script>
@@ -286,5 +378,8 @@ export default defineComponent({
 }
 .error_back {
 	background: red;
+}
+.network-info{
+
 }
 </style>

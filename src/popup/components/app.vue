@@ -1,14 +1,28 @@
 <template>
   <div class="wrapper">
-    <el-button type="success" @click="test">插入性能测试工具</el-button>
+    <el-button type="success" @click="ContentInitFun">插入性能测试工具</el-button>
   </div>
 </template>
-<script setup>
-const test = () => {
-  chrome.tabs.getSelected(null, function(tab){
-  chrome.tabs.sendRequest(tab.id, { popAction: "Test"});
-  });
-}
+<script>
+import {defineComponent} from "vue";
+export default defineComponent({
+    data(){
+      return {
+      }
+    },
+    methods:{
+        ContentInitFun() {
+            chrome.tabs.getSelected(null, function(tab){
+                chrome.tabs.sendMessage(tab.id, { cmd: 'ContentInitFun'});
+                fetch('https://api.ip.sb/geoip').then(resp => {
+                    resp.json().then(jsData => {
+                        chrome.tabs.sendMessage(tab.id, { cmd: 'IpData', data: jsData});
+                    })
+                });
+            });
+        }
+    }
+})
 </script>
 <style scoped>
 .wrapper{

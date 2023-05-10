@@ -16,49 +16,34 @@ function joinContent (element) {
 		div.style.zIndex = '4000'
 		div.style.position = 'fixed'
 		document.body.appendChild(div)
-		div.ins
+		// div.ins
 		const app = createApp(element)
 		app.use(ElementPlus)
 		app.mount('#joinContentApp')
-		InsertScript()
+		InsertSourceScript('js/inject.js')
+		InsertOtherScript('edge://resources/js/cr.js')
+		InsertOtherScript('//cdnjs.cloudflare.com/ajax/libs/html2canvas/1.3.2/html2canvas.min.js')
 	}
 }
 //chrome的API接口,用于传输或监听数据信号
-chrome.extension.onRequest.addListener(
+chrome.runtime.onMessage.addListener(
   function (request) {
-    if (request.popAction === "Test") {
-			console.log("test")
+    if (request.cmd === "ContentInitFun") {
 		joinContent(App)
     }
   }
 );
-// function injectJsInsert () {
-// 	document.addEventListener('readystatechange', () => {
-// 		// append content js
-// 		const contentPath = 'js/content.js'
-// 		const contentScript = document.createElement('script')
-// 		contentScript.setAttribute('type', 'text/javascript')
-// 		contentScript.src = chrome.extension.getURL(contentPath)
-// 		document.body.appendChild(contentScript)
-// 		// append inject js
-// 		const injectPath = 'js/inject.js'
-// 		const injectScript = document.createElement('script')
-// 		injectScript.setAttribute('type', 'text/javascript')
-// 		injectScript.src = chrome.extension.getURL(injectPath)
-// 		document.body.appendChild(injectScript)
-// 	})
-// }
-function InsertScript(){
-	// append content js
-	// const contentPath = 'js/content.js'
-	// const contentScript = document.createElement('script')
-	// contentScript.setAttribute('type', 'text/javascript')
-	// contentScript.src = chrome.extension.getURL(contentPath)
-	// document.head.appendChild(contentScript)
-	// append inject js
-	const injectPath = 'js/inject.js'
-	const injectScript = document.createElement('script')
-	injectScript.setAttribute('type', 'text/javascript')
-	injectScript.src = chrome.extension.getURL(injectPath)
-	document.body.appendChild(injectScript)
+
+function InsertOtherScript(path){
+	const otherScript = document.createElement('script')
+	otherScript.setAttribute('type', 'text/javascript')
+	otherScript.src = path
+	document.body.appendChild(otherScript)
+}
+
+function InsertSourceScript(path){
+	const sourceScript = document.createElement('script')
+	sourceScript.setAttribute('type', 'text/javascript')
+	sourceScript.src = chrome.extension.getURL(path)
+	document.body.appendChild(sourceScript)
 }
