@@ -21,7 +21,6 @@ function joinContent (element) {
 		app.use(ElementPlus)
 		app.mount('#joinContentApp')
 		InsertSourceScript('js/inject.js')
-		InsertOtherScript('edge://resources/js/cr.js')
 		InsertOtherScript('//cdnjs.cloudflare.com/ajax/libs/html2canvas/1.3.2/html2canvas.min.js')
 	}
 }
