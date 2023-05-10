@@ -46,10 +46,13 @@
 						<template #reference>
 							<el-button style="margin-left: 16px" text bg>网络信息</el-button>
 						</template>
-						<el-descriptions title="网络信息" size="small" :column="2">
+						<el-descriptions title="网络信息" size="small" :column="1">
 							<template #extra>
 								<el-button type="success" size="small" @click="htmlToImage('network-info')">导出PNG</el-button>
 							</template>
+							<el-descriptions-item v-if="private_ip!==''" label="私网IP">
+								{{ private_ip }}
+							</el-descriptions-item>
 							<el-descriptions-item label="公网IP">
 								{{ ipData.ip }}
 							</el-descriptions-item>
@@ -149,13 +152,12 @@ export default defineComponent({
 				country_code: '',
 				region_code: ''
 			},
+			private_ip: ''
 		}
 	},
 	created() {
 		chrome.runtime.onMessage.addListener(this.getIpData)
-		this.getIP(function (ip){
-			console.log(ip)
-		})
+		this.getIP(this.setPrivateIp)
 	},
 	methods: {
 		getIP(callback) {
@@ -230,6 +232,9 @@ export default defineComponent({
 			if (val.cmd === "IpData") {
 				this.ipData = val.data
 			}
+		},
+		setPrivateIp(val){
+			this.private_ip = val
 		},
 		// eslint-disable-next-line no-unused-vars
 		tableRowStyle({ row, rowIndex }) {
