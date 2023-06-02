@@ -2,8 +2,25 @@ import { createApp } from 'vue'
 import App from './components/app.vue'
 import ElementPlus from 'element-plus'
 // import 'element-plus/dist/index.css'
-// joinContent(app)
+initContent()
+// joinContent(App)
 // injectJsInsert()
+
+function initContent () {
+		let url = window.location.hostname
+		chrome.storage.local.get(['DebugTabs'], function(result) {
+			if (Array.isArray(result.DebugTabs)) {
+				if (result.DebugTabs.includes(url)) {
+					joinContent(App)
+				}
+			} else {
+				chrome.storage.local.set({DebugTabs: []}, function() {
+					console.log('Data init');
+				});
+			}
+		});
+}
+
 function joinContent (element) {
 	const join = document.getElementById('joinContentApp')
 	if (join === null){
@@ -29,6 +46,7 @@ chrome.runtime.onMessage.addListener(
   function (request) {
     if (request.cmd === "ContentInitFun") {
 		joinContent(App)
+		chrome.runtime.sendMessage(chrome.runtime.id, {type: 'ajaxInject-backend', to: 'background'});
     }
   }
 );
@@ -46,3 +64,11 @@ function InsertSourceScript(path){
 	sourceScript.src = chrome.extension.getURL(path)
 	document.body.appendChild(sourceScript)
 }
+
+// // 接收background.js传来的信息
+// chrome.runtime.onMessage.addListener(msg => {
+// 	if (msg.type === 'ajaxInject-content') {
+// 		console.log(msg.from,msg.data)
+// 		// postMessage({...msg, to: 'pageScript'});
+// 	}
+// });

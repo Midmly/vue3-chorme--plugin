@@ -1,47 +1,344 @@
 <template>
-    <transition name="fade" mode="out-in">
-        <div v-if="!data.visible">
-            <div class="button-box" v-drag draggable="false">
-                <el-button class="button-badge" circle v-on:dblclick="data.visible = !data.visible" />
-                <div style="text-align: center">性能监视器(双击打开)</div>
-            </div>
-        </div>
-        <div v-else class="box-card-parent">
-            <el-card class="box-card" :body-style="{ width: '100%', height: '90%', borderRadius: '1rem', padding: '10px' }">
-                <el-tabs
-                    v-model="data.activeName"
-                    type="card"
-                    class="demo-tabs"
-                    @tab-click="handleClick"
+<!--    <transition name="fade" mode="out-in">-->
+<!--        <div v-if="!visible">-->
+<!--            <div class="button-box" v-drag draggable="false">-->
+<!--                <el-button class="button-badge" circle v-on:dblclick="visible = !visible" />-->
+<!--                <div style="text-align: center">性能监视器(双击打开)</div>-->
+<!--            </div>-->
+<!--        </div>-->
+<!--        <div class="box-card-parent">-->
+            <el-card
+                    :body-style="{ width: '100%', height: '100%', borderRadius: '1rem', padding: '10px' }"
+            >
+                <template #header>
+                    <!--					<el-select-->
+                    <!--							style="width: 10%"-->
+                    <!--							v-model="selectedType"-->
+                    <!--							placeholder="监测类型"-->
+                    <!--					>-->
+                    <!--						<el-option-->
+                    <!--								v-for="item in selectTypeOptions"-->
+                    <!--								:key="item.value"-->
+                    <!--								:label="item.label"-->
+                    <!--								:value="item.value"-->
+                    <!--						/>-->
+                    <!--					</el-select>-->
+                    <el-button type="primary" @click="getStaticMonitor">获取性能数据</el-button>
+                    <el-button style="margin-left: 1rem" :disabled="tableData.length===0" type="success" @click="downloadData">下载数据</el-button>
+                    <span style="margin-left: 1rem;">性能标注：</span>
+                    <span>
+						<span class="color success_back"></span>
+						<span class="success-row">{{ "<=50ms" }}</span>
+					</span>
+                    <span>
+						<span class="color warning_back"></span>
+						<span class="warning-row">{{ "<=100ms" }}</span>
+					</span>
+                    <span>
+						<span class="color error_back"></span>
+						<span class="error-row">{{ ">100ms" }}</span>
+					</span>
+                    <span style="margin-left: 1rem;">总条数：{{ tableData.length }}</span>
+                    <el-popover placement="bottom" :width="400" trigger="click" :popper-style="{zIndex: 6000}" popper-class="network-info">
+                        <template #reference>
+                            <el-button style="margin-left: 16px" text bg>网络信息</el-button>
+                        </template>
+                        <el-descriptions title="网络信息" size="small" :column="1">
+                            <template #extra>
+                                <el-button type="success" size="small" @click="htmlToImage('network-info')">导出PNG</el-button>
+                            </template>
+                            <el-descriptions-item v-if="private_ip!==''" label="私网IP">
+                                {{ private_ip }}
+                            </el-descriptions-item>
+                            <el-descriptions-item label="公网IP">
+                                {{ ipData.ip }}
+                            </el-descriptions-item>
+                            <el-descriptions-item label="国家">
+                                {{ ipData.country }}
+                            </el-descriptions-item>
+                            <el-descriptions-item label="州/省">
+                                {{ ipData.region }}
+                            </el-descriptions-item>
+                            <el-descriptions-item label="城市">
+                                {{ ipData.city }}
+                            </el-descriptions-item>
+                            <el-descriptions-item label="时区">
+                                {{ ipData.timezone }}
+                            </el-descriptions-item>
+                            <el-descriptions-item label="经纬度">
+                                {{ ipData.longitude }} , {{ ipData.latitude }}
+                            </el-descriptions-item>
+                            <el-descriptions-item label="ISP">
+                                {{ ipData.isp }}
+                            </el-descriptions-item>
+                        </el-descriptions>
+                    </el-popover>
+<!--                    <el-button style="float: right" type="success" @click="closeCard"-->
+<!--                    >隐藏</el-button>-->
+                </template>
+                <el-table
+                        :data="tableData"
+                        style="width: 100%; border-radius: 1rem"
+                        height="100%"
+                        :default-sort="{ prop: 'requestTime', order: 'descending' }"
+                        :row-style="tableRowStyle"
+                        border
+                        lazy
                 >
-                    <el-tab-pane label="抓包" name="first">
-                        <Debugger/>
-                    </el-tab-pane>
-                    <el-tab-pane label="Performance" name="second">
-                        <Performance/>
-                    </el-tab-pane>
-                </el-tabs>
-                <el-button style="position: absolute;right: 1rem;top: .5rem;" type="success" @click="data.visible=false"
-                >隐藏</el-button>
+                    <el-table-column fixed prop="name" show-overflow-tooltip sortable resizable label="请求路径" width="350" />
+                    <el-table-column fixed prop="initiatorType" sortable resizable label="类型" width="auto" />
+                    <el-table-column fixed prop="lookupTime" sortable resizable label="域名解析ms" width="auto" />
+                    <el-table-column fixed prop="tcpTime" sortable resizable label="tcp建接ms" width="auto" />
+                    <el-table-column fixed prop="sslTime" sortable resizable label="ssl建接ms" width="auto" />
+                    <el-table-column fixed prop="requestTime" sortable resizable label="请求耗时ms" width="auto" />
+                    <el-table-column fixed prop="responseTime" sortable resizable label="响应耗时ms" width="auto" />
+                    <el-table-column fixed prop="transferSize" sortable resizable label="传输大小kb" width="auto" />
+                    <el-table-column fixed prop="firstByteTime" sortable resizable label="首包时间ms" width="auto" />
+                    <!--					<el-table-column fixed prop="responseEnd" sortable resizable label="结束时间ms" width="auto" />-->
+                    <!--					<el-table-column fixed prop="duration" sortable resizable label="消耗时间ms" width="auto" />-->
+                </el-table>
             </el-card>
-        </div>
-    </transition>
+<!--        </div>-->
+<!--    </transition>-->
 </template>
 
-<script setup>
-import Debugger  from './pages/Debugger.vue'
-import Performance  from './pages/Performance.vue'
-import {onMounted, reactive, ref} from "vue";
+<script>
+import {defineComponent} from "vue";
+import html2canvas from "html2canvas";
 
-let data =reactive({
-    visible: true,
-    activeName: 'first'
-})
+export default defineComponent({
+    data(){
+        return {
+            visible: false,
+            selectTypeOptions: [
+                {
+                    label: '资源',
+                    value: 'resource'
+                },
+                {
+                    label: '导航',
+                    value: 'navigation'
+                },
+                {
+                    label: '框架',
+                    value: 'frame'
+                },
+                {
+                    label: '耗时任务',
+                    value: 'longtask'
+                }
+            ],
+            selectedType: 'resource',
+            tableData: [],
+            ipData: {
+                organization: '',
+                longitude: 0,
+                city: '',
+                timezone: '',
+                isp: '',
+                offset: 0,
+                region: '',
+                asn: 0,
+                asn_organization: '',
+                country: '',
+                ip: '',
+                latitude: 0,
+                continent_code: '',
+                country_code: '',
+                region_code: ''
+            },
+            private_ip: ''
+        }
+    },
+    created() {
+        chrome.runtime.onMessage.addListener(this.getIpData)
+        this.getIP(this.setPrivateIp)
+    },
+    methods: {
+        getIP(callback) {
+            let recode = {};
+            let RTCPeerConnection = window.RTCPeerConnection || window.mozRTCPeerConnection || window.webkitRTCPeerConnection;
+            // 如果不存在则使用一个iframe绕过
+            if (!RTCPeerConnection) {
+                // 因为这里用到了iframe，所以在调用这个方法的script上必须有一个iframe标签
+                // <iframe id="iframe" sandbox="allow-same-origin"></iframe>
+                let win = this.$refs.iframe.contentWindow;
+                RTCPeerConnection = win.RTCPeerConnection || win.mozRTCPeerConnection || win.webkitRTCPeerConnection;
+            }
 
-const handleClick = (tab, event) => {
-    // console.log(tab, event)
-}
-onMounted(()=>{
+            //创建实例，生成连接
+            let pc = new RTCPeerConnection();
+
+            // 匹配字符串中符合ip地址的字段
+            function handleCandidate(candidate) {
+                let ip_regexp = /([0-9]{1,3}(\.[0-9]{1,3}){3}|([a-f0-9]{1,4}((:[a-f0-9]{1,4}){7}|:+[a-f0-9]{1,4}){6}))/;
+                let ip_isMatch = candidate.match(ip_regexp)[1];
+                if (!recode[ip_isMatch]) {
+                    callback(ip_isMatch);
+                    recode[ip_isMatch] = true;
+                }
+            }
+
+            //监听icecandidate事件
+            pc.onicecandidate = (ice) => {
+                if (ice.candidate) {
+                    handleCandidate(ice.candidate.candidate);
+                }
+            };
+            //建立一个伪数据的通道
+            pc.createDataChannel('');
+            pc.createOffer((res) => {
+                pc.setLocalDescription(res);
+            }, () => {});
+
+            //延迟，让一切都能完成
+            setTimeout(() => {
+                let lines = pc.localDescription.sdp.split('\n');
+                lines.forEach(item => {
+                    if (item.indexOf('a=candidate:') === 0) {
+                        handleCandidate(item);
+                    }
+                })
+            }, 1000);
+        },
+        htmlToImage(val){
+            // 获取要转换为图片的 DOM 元素
+            const dom = document.getElementsByClassName(val);
+            if (dom.length===0) {
+                return
+            }
+            // 使用 html2canvas 将 DOM 转换为 Canvas
+            html2canvas(dom[0]).then(canvas => {
+                // 生成图片 URL 或 Blob 对象
+                const url = canvas.toDataURL();
+                canvas.toBlob(function (blob){
+                    // 创建并设置下载链接
+                    const a = document.createElement('a');
+                    a.download = 'network.png';
+                    a.href = url || URL.createObjectURL(blob);
+                    // 触发下载事件
+                    a.click();
+                });
+            }).catch( e=> {
+                console.log(e)
+            });
+        },
+        getIpData(val) {
+            if (val.cmd === "IpData") {
+                this.ipData = val.data
+            }
+        },
+        setPrivateIp(val){
+            this.private_ip = val
+        },
+        // eslint-disable-next-line no-unused-vars
+        tableRowStyle({ row, rowIndex }) {
+            if (row.requestTime <= 50) {
+                return {color: 'green'}
+            } else if (row.requestTime <= 100) {
+                return {color: '#e6a23c'}
+            } else {
+                return {color: 'red'}
+            }
+        },
+        getStaticMonitor(){
+// 获取iframe下所有资源类型的性能条目
+            const entries = window.performance.getEntriesByType(this.selectedType)
+            this.tableData = []
+            for (let i = 0; i < entries.length; i++) {
+                this.tableData.push({
+                    name: entries[i].name,
+                    initiatorType: entries[i].initiatorType,
+                    // fileType: entries[i].name.replace(/(^.*)(\..*$)/, '$2'),
+                    lookupTime: parseFloat((entries[i].domainLookupEnd - entries[i].domainLookupStart).toFixed(2)),
+                    tcpTime: parseFloat((entries[i].connectEnd - entries[i].connectStart).toFixed(2)),
+                    sslTime: parseFloat((entries[i].connectEnd - entries[i].secureConnectionStart).toFixed(2)),
+                    requestTime: parseFloat((entries[i].responseStart - entries[i].requestStart).toFixed(2)),
+                    responseTime: parseFloat((entries[i].responseEnd - entries[i].responseStart).toFixed(2)),
+                    transferSize: parseFloat((entries[i].transferSize / 1000).toFixed(2)),
+                    firstByteTime: parseFloat((entries[i].responseStart - entries[i].domainLookupStart).toFixed(2)),
+                })
+            }
+        },
+        closeCard(){
+            this.visible = !this.visible
+            this.tableData = []
+        },
+        downloadData(){
+            this.downloadIpData()
+            let csvContent = "data:text/csv;charset=utf-8,";
+            const headerRow = '请求路径,类型,域名解析ms,tcp建连ms,ssl建连ms,请求耗时ms,响应耗时ms,传输大小kb,首包时间ms\r\n';
+            csvContent += headerRow;
+            for (let i = 0; i < this.tableData.length; i++) {
+                const rowData = Object.values(this.tableData[i]).join(',');
+                csvContent += rowData + '\r\n';
+            }
+            const link = document.createElement('a');
+            link.href = encodeURI(csvContent);
+            link.download = "data.csv";
+            link.click();
+        },
+        downloadIpData(){
+            let csvContent = "data:text/csv;charset=utf-8,key,value\r\n";
+            Object.keys(this.ipData).forEach(key => {
+                const value = this.ipData[key];
+                csvContent += `${key},"${value}"\r\n`
+            });
+            const link = document.createElement('a');
+            link.href = encodeURI(csvContent);
+            link.download = "networkInfo.csv";
+            link.click();
+        }
+    },
+    directives: {
+        drag(el) {
+            const oDiv = el // 当前元素
+            // 获取可视区域的宽高
+            const viewWidth = document.documentElement.clientWidth
+            const viewHeight = document.documentElement.clientHeight
+            // 计算元素最大可移动距离
+            const maxLeft = viewWidth - oDiv.offsetWidth
+            const maxTop = viewHeight - oDiv.offsetHeight
+            // let self = this // 上下文
+            // 禁止选择网页上的文字
+            // eslint-disable-next-line func-names
+            document.onselectstart = function () {
+                return false
+            }
+            // eslint-disable-next-line func-names
+            oDiv.onmousedown = function (e) {
+                // 鼠标按下，计算当前元素距离可视区的距离
+                const disX = e.clientX - oDiv.offsetLeft
+                const disY = e.clientY - oDiv.offsetTop
+                // eslint-disable-next-line no-shadow,func-names
+                document.onmousemove = function (e) {
+                    // 通过事件委托，计算移动的距离
+                    let l = e.clientX - disX
+                    let t = e.clientY - disY
+
+                    // 限制元素位置不超出可视区域
+                    if (l < 0) l = 0
+                    if (l > maxLeft) l = maxLeft
+                    if (t < 0) t = 0
+                    if (t > maxTop) t = maxTop
+
+                    // 移动当前元素
+                    oDiv.style.left = `${l}px`
+                    oDiv.style.top = `${t}px`
+                }
+                // eslint-disable-next-line no-shadow,no-unused-vars,func-names
+                document.onmouseup = function (e) {
+                    document.onmousemove = null
+                    document.onmouseup = null
+                }
+                // return false不加的话可能导致黏连，就是拖到一个地方时div粘在鼠标上不下来，相当于onmouseup失效
+                return false
+            }
+        }
+    },
+    unmounted() {
+        // 注销监听器
+    }
 })
 </script>
 
@@ -86,14 +383,14 @@ onMounted(()=>{
 }
 
 .box-card {
-    width: 90%;
-    height: 90%;
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    box-shadow: 0px 0px 200px 200px rgba(0, 0, 0, 0.4);
-    border-radius: 1rem;
+    /*width: 80%;*/
+    /*height: 80%;*/
+    /*position: fixed;*/
+    /*top: 50%;*/
+    /*left: 50%;*/
+    /*transform: translate(-50%, -50%);*/
+    /*box-shadow: 0px 0px 200px 200px rgba(0, 0, 0, 0.4);*/
+    /*border-radius: 1rem;*/
 }
 .success-row {
     margin-left: 2px;

@@ -8,7 +8,11 @@
 		"default_icon": "assets/images/icon48.png",
 		"default_popup": "popup.html"
 	},
-	"permissions": ["tabs"],
+	"permissions": [
+		"debugger",
+		"storage",
+		"tabs"
+	],
 	"background": {
 		"scripts": ["js/background.js"]
 	},
