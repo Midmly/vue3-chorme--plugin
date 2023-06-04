@@ -22,8 +22,6 @@ const data =reactive({
 
 const handleAddDebugTab = () => {
         chrome.storage.local.get([data.currTabUrl], function(result) {
-
-
            if (!result[data.currTabUrl].includes(data.currTabUrl)) {
                result.DebugTabs.push(data.currTabUrl)
                chrome.storage.local.set({DebugTabs: result.DebugTabs}, function() {
@@ -65,6 +63,7 @@ const handleClearAllDebugTab = () => {
     });
 }
 
+// eslint-disable-next-line no-unused-vars
 const handleAddDebugApi = (url) => {
     chrome.storage.local.get([data.debugApiKey], function(result) {
         if (!result[data.debugApiKey].includes(url)) {

@@ -31,13 +31,14 @@
 <script setup>
 import Debugger  from './pages/Debugger.vue'
 import Performance  from './pages/Performance.vue'
-import {onMounted, reactive, ref} from "vue";
+import {onMounted, reactive} from "vue";
 
 let data =reactive({
-    visible: true,
+    visible: false,
     activeName: 'first'
 })
 
+// eslint-disable-next-line no-unused-vars
 const handleClick = (tab, event) => {
     // console.log(tab, event)
 }

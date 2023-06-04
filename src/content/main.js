@@ -2,10 +2,11 @@ import { createApp } from 'vue'
 import App from './components/app.vue'
 import ElementPlus from 'element-plus'
 // import 'element-plus/dist/index.css'
-initContent()
+joinContent(App)
 // joinContent(App)
 // injectJsInsert()
 
+// eslint-disable-next-line no-unused-vars
 function initContent () {
 		let url = window.location.hostname
 		chrome.storage.local.get(['DebugTabs'], function(result) {
