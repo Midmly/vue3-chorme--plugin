@@ -3,19 +3,20 @@ console.log(dbName);
 // eslint-disable-next-line no-undef,no-unused-vars
 const db = new Dexie(dbName);
 db.version(1).stores({
-    users: "++id, name, age, emial",
-    students: "++id, &username",
-    books: "id, author, name, *categories"
+    requests: '++id, url, method, status, type, requestTime, responseTime, requestHeaders, responseHeaders, responseData'
 });
-db.users.get(1).then(resp=>{
-    console.log(resp)
-})
+// 打开数据库
+// db.open().then(() => {
+//     console.log('Database opened successfully');
+// }).catch(error => {
+//     console.error('Failed to open database:', error);
+// });
 
-//   db.users.add({
-//     name: '张三',
-//     age: 18,
-//     email: 'xxxx@xx.com.cn'
-//   })
+// 将table requests 实例导出
+// const RequestDatabase =
+
+// 将 requests 实例注册为全局变量
+window.requestDatabase = db.table('requests');
 
 // eslint-disable-next-line no-unused-vars,no-unexpected-multiline
 (function (xhr) {
@@ -30,19 +31,24 @@ db.users.get(1).then(resp=>{
         this._url = url;
         return open.apply(this, arguments);
     };
-
-    XHR.send = function (postData) {
-        // console.log('injected script xhr request:', this._method, this._url, this.getAllResponseHeaders(), postData);
+    const startTime = Date.now();
+    // XHR.send = function (postData) {
+    XHR.send = function () {
         this.addEventListener('load', function () {
-            console.log({ type: 'xhr',
-                request: {
+            const endTime = Date.now();
+            const requestData = {
                 method: this._method,
                 url: this._url,
-                headers: this.getAllResponseHeaders(),
-                body: postData
-                },
-                response: this.response })
-            // window.postMessage({ type: 'xhr', data: this.response }, '*');  // send to content script
+                status: this.status,
+                type: 'xhr',
+                requestTime: startTime,
+                responseTime: endTime,
+                responseHeaders: this.getAllResponseHeaders(),
+                responseData: this.response
+            };
+            // 保存请求和响应数据到 Dexie 数据库
+            window.requestDatabase.add(requestData);
+            console.log('set data to db success!')
         });
         return send.apply(this, arguments);
     };
@@ -50,32 +56,79 @@ db.users.get(1).then(resp=>{
 
 
 const { fetch: origFetch } = window;
-window.fetch = async (...args) => {
-    const response = await origFetch(...args);
-    // console.log('injected script fetch request:', args);
-    response.clone().blob() // maybe json(), text(), blob()
+window.fetch = async (url, options) => {
+    const startTime = Date.now();
+    const response = await origFetch(url, options);
+
+    const respClone = response.clone();
+    cloneFetchResponse(response).then();
+    respClone.blob() // maybe json(), text(), blob()
         .then(data => {
-            console.log(data.type)
+            const endTime = Date.now();
             if (data.type.includes('application/json')) {
                 (new Response(data)).json().then(resp=>{
-                    console.log({ type: 'fetch',request: args, response: resp })
+                    console.log(response.status)
+                    const requestData = {
+                        method: options.method,
+                        url: url,
+                        status: response.status,
+                        type: 'fetch',
+                        requestTime: startTime,
+                        responseTime: endTime,
+                        requestHeaders: options.headers,
+                        responseHeaders: response.headers,
+                        responseData: resp
+                    };
+                    // 保存请求和响应数据到 Dexie 数据库
+                    window.requestDatabase.add(requestData);
+                    console.log('set data to db success!')
                 }).catch(err => {
                     console.error(err)
                 });
             } else if (data.type.includes('text/plain')) {
                 (new Response(data)).text().then(resp=>{
-                    console.log({ type: 'fetch',request: args, response: resp })
+                    console.log(resp)
+                    // const requestData = {
+                    //     method: this._method,
+                    //     url: this._url,
+                    //     status: this.status,
+                    //     type: 'fetch',
+                    //     requestTime: startTime,
+                    //     responseTime: endTime,
+                    //     responseHeaders: this.getAllResponseHeaders(),
+                    //     responseData: resp
+                    // };
+                    // console.log(this.response)
+                    // // 保存请求和响应数据到 Dexie 数据库
+                    // window.requestDatabase.add(requestData);
+                    // console.log('set data to db success!')
                 }).catch(err => {
                     console.error(err)
                 });
             } else {
-                console.log({ type: 'fetch',request: args, response: URL.createObjectURL(data) })
+                // const requestData = {
+                //     method: this._method,
+                //     url: this._url,
+                //     status: this.status,
+                //     type: 'fetch',
+                //     requestTime: startTime,
+                //     responseTime: endTime,
+                //     responseHeaders: this.getAllResponseHeaders(),
+                //     responseData: URL.createObjectURL(data)
+                // };
+                // console.log(this.response)
+                // // 保存请求和响应数据到 Dexie 数据库
+                // window.requestDatabase.add(requestData);
+                // console.log('set data to db success!')
             }
-            // window.postMessage({ type: 'fetch', data: data }, '*'); // send to content script
-            //window.postMessage({ type: 'fetch', data: URL.createObjectURL(data) }, '*'); // if a big media file, can createObjectURL before send to content script
         }).catch(err => console.error(err));
 
     return response;
 };
+
+// eslint-disable-next-line no-unused-vars
+async function cloneFetchResponse(response) {
+  console.log(response)
+}
 
 console.log('this is inject')
