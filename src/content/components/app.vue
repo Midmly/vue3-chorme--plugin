@@ -32,6 +32,7 @@
 import Debugger  from './pages/Debugger.vue'
 import Performance  from './pages/Performance.vue'
 import {onMounted, reactive} from "vue";
+// import { Dexie } from "dexie";
 
 let data =reactive({
     visible: false,
@@ -43,6 +44,20 @@ const handleClick = (tab, event) => {
     // console.log(tab, event)
 }
 onMounted(()=>{
+  // const dbName = window.location.hostname;
+// console.log(dbName);
+// eslint-disable-next-line no-undef,no-unused-vars
+// const db = new Dexie(dbName);
+// db.version(1).stores({
+//     users: "++id, name, age, emial",
+//     students: "++id, &username",
+//     books: "id, author, name, *categories"
+// });
+//   db.users.add({
+//     name: '张三',
+//     age: 18,
+//     email: 'xxxx@xx.com.cn'
+//   })
 })
 </script>
 

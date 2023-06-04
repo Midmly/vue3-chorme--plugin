@@ -22,14 +22,24 @@ const data =reactive({
 
 const handleAddDebugTab = () => {
         chrome.storage.local.get([data.currTabUrl], function(result) {
-           if (!result[data.currTabUrl].includes(data.currTabUrl)) {
-               result.DebugTabs.push(data.currTabUrl)
-               chrome.storage.local.set({DebugTabs: result.DebugTabs}, function() {
-                   data.isSelect = true
-                   chrome.tabs.reload(data.currTabId)
-                   console.log('Array updated')
-               });
-           }
+          if (result[data.currTabUrl] !== undefined) {
+            if (!result[data.currTabUrl].includes(data.currTabUrl)) {
+              result.DebugTabs.push(data.currTabUrl)
+              chrome.storage.local.set({DebugTabs: result.DebugTabs}, function() {
+                data.isSelect = true
+                chrome.tabs.reload(data.currTabId)
+                console.log('Array updated')
+              });
+            }
+          } else {
+            const temp = []
+            temp.push(data.currTabUrl)
+            chrome.storage.local.set({DebugTabs: temp}, function() {
+              data.isSelect = true
+              chrome.tabs.reload(data.currTabId)
+              console.log('Array updated')
+            });
+          }
         });
 }
 
@@ -65,16 +75,7 @@ const handleClearAllDebugTab = () => {
 
 // eslint-disable-next-line no-unused-vars
 const handleAddDebugApi = (url) => {
-    chrome.storage.local.get([data.debugApiKey], function(result) {
-        if (!result[data.debugApiKey].includes(url)) {
-            result.DebugTabs.push(data.currTabUrl)
-            chrome.storage.local.set({debugApiKey: result.DebugTabs}, function() {
-                data.isSelect = true
-                chrome.tabs.reload(data.currTabId)
-                console.log('Array updated')
-            });
-        }
-    });
+
 }
 
 onMounted(()=>{

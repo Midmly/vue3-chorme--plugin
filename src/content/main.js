@@ -2,7 +2,8 @@ import { createApp } from 'vue'
 import App from './components/app.vue'
 import ElementPlus from 'element-plus'
 // import 'element-plus/dist/index.css'
-joinContent(App)
+initContent()
+// joinContent(App)
 // joinContent(App)
 // injectJsInsert()
 
@@ -38,6 +39,7 @@ function joinContent (element) {
 		const app = createApp(element)
 		app.use(ElementPlus)
 		app.mount('#joinContentApp')
+		InsertSourceScript('js/dexie.js')
 		InsertSourceScript('js/inject.js')
 		InsertOtherScript('//cdnjs.cloudflare.com/ajax/libs/html2canvas/1.3.2/html2canvas.min.js')
 	}

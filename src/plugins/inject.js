@@ -1,3 +1,22 @@
+const dbName = window.location.hostname;
+console.log(dbName);
+// eslint-disable-next-line no-undef,no-unused-vars
+const db = new Dexie(dbName);
+db.version(1).stores({
+    users: "++id, name, age, emial",
+    students: "++id, &username",
+    books: "id, author, name, *categories"
+});
+db.users.get(1).then(resp=>{
+    console.log(resp)
+})
+
+//   db.users.add({
+//     name: '张三',
+//     age: 18,
+//     email: 'xxxx@xx.com.cn'
+//   })
+
 // eslint-disable-next-line no-unused-vars,no-unexpected-multiline
 (function (xhr) {
 
