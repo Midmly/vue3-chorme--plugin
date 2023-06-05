@@ -1,26 +1,16 @@
-const dbName = window.location.hostname;
-console.log(dbName);
+const dbName = 'requestDatabase-'+window.location.hostname;
 // eslint-disable-next-line no-undef,no-unused-vars
 const db = new Dexie(dbName);
 db.version(1).stores({
     requests: '++id, url, method, status, type, requestTime, responseTime, requestHeaders, responseHeaders, responseData'
 });
 // 打开数据库
-// db.open().then(() => {
-//     console.log('Database opened successfully');
-// }).catch(error => {
-//     console.error('Failed to open database:', error);
-// });
-
-// 将table requests 实例导出
-// const RequestDatabase =
-
 // 将 requests 实例注册为全局变量
-window.requestDatabase = db.table('requests');
+window.requestTable = db.table('requests');
+
 
 // eslint-disable-next-line no-unused-vars,no-unexpected-multiline
 (function (xhr) {
-
     const XHR = XMLHttpRequest.prototype;
 
     const open = XHR.open;
@@ -32,10 +22,16 @@ window.requestDatabase = db.table('requests');
         return open.apply(this, arguments);
     };
     const startTime = Date.now();
-    // XHR.send = function (postData) {
     XHR.send = function () {
         this.addEventListener('load', function () {
             const endTime = Date.now();
+            const respHeaders = {}
+            for (let key of this.getAllResponseHeaders().split('\r\n')) {
+                const tmp = key.split(':')
+                if (tmp.length === 2){
+                    respHeaders[tmp[0].trim()] = tmp[1].trim();
+                }
+            }
             const requestData = {
                 method: this._method,
                 url: this._url,
@@ -43,12 +39,12 @@ window.requestDatabase = db.table('requests');
                 type: 'xhr',
                 requestTime: startTime,
                 responseTime: endTime,
-                responseHeaders: this.getAllResponseHeaders(),
+                responseHeaders: respHeaders,
                 responseData: this.response
             };
             // 保存请求和响应数据到 Dexie 数据库
-            window.requestDatabase.add(requestData);
-            console.log('set data to db success!')
+            window.requestTable.add(requestData);
+            console.log('set xhr data to db success!')
         });
         return send.apply(this, arguments);
     };
@@ -59,76 +55,71 @@ const { fetch: origFetch } = window;
 window.fetch = async (url, options) => {
     const startTime = Date.now();
     const response = await origFetch(url, options);
-
     const respClone = response.clone();
-    cloneFetchResponse(response).then();
     respClone.blob() // maybe json(), text(), blob()
         .then(data => {
             const endTime = Date.now();
+            const respHeaders = {}
+            for (let [key, value] of respClone.headers) {
+                respHeaders[key] = value;
+            }
             if (data.type.includes('application/json')) {
                 (new Response(data)).json().then(resp=>{
-                    console.log(response.status)
                     const requestData = {
-                        method: options.method,
+                        method: options?.method,
                         url: url,
-                        status: response.status,
+                        status: respClone.status,
                         type: 'fetch',
                         requestTime: startTime,
                         responseTime: endTime,
-                        requestHeaders: options.headers,
-                        responseHeaders: response.headers,
+                        requestHeaders: options?.headers,
+                        responseHeaders: respHeaders,
                         responseData: resp
                     };
                     // 保存请求和响应数据到 Dexie 数据库
-                    window.requestDatabase.add(requestData);
-                    console.log('set data to db success!')
+                    window.requestTable.add(requestData);
+                    console.log('set fetch data to db success!')
                 }).catch(err => {
                     console.error(err)
                 });
             } else if (data.type.includes('text/plain')) {
                 (new Response(data)).text().then(resp=>{
-                    console.log(resp)
-                    // const requestData = {
-                    //     method: this._method,
-                    //     url: this._url,
-                    //     status: this.status,
-                    //     type: 'fetch',
-                    //     requestTime: startTime,
-                    //     responseTime: endTime,
-                    //     responseHeaders: this.getAllResponseHeaders(),
-                    //     responseData: resp
-                    // };
-                    // console.log(this.response)
+                    const requestData = {
+                        method: options?.method,
+                        url: url,
+                        status: respClone.status,
+                        type: 'fetch',
+                        requestTime: startTime,
+                        responseTime: endTime,
+                        requestHeaders: options?.headers,
+                        responseHeaders: respHeaders,
+                        responseData: resp
+                    };
                     // // 保存请求和响应数据到 Dexie 数据库
-                    // window.requestDatabase.add(requestData);
-                    // console.log('set data to db success!')
+                    window.requestTable.add(requestData);
+                    console.log('set fetch data to db success!')
                 }).catch(err => {
                     console.error(err)
                 });
             } else {
-                // const requestData = {
-                //     method: this._method,
-                //     url: this._url,
-                //     status: this.status,
-                //     type: 'fetch',
-                //     requestTime: startTime,
-                //     responseTime: endTime,
-                //     responseHeaders: this.getAllResponseHeaders(),
-                //     responseData: URL.createObjectURL(data)
-                // };
-                // console.log(this.response)
+                const requestData = {
+                    method: options?.method,
+                    url: url,
+                    status: respClone.status,
+                    type: 'fetch',
+                    requestTime: startTime,
+                    responseTime: endTime,
+                    requestHeaders: options?.headers,
+                    responseHeaders: respHeaders,
+                    responseData: URL.createObjectURL(data)
+                };
                 // // 保存请求和响应数据到 Dexie 数据库
-                // window.requestDatabase.add(requestData);
-                // console.log('set data to db success!')
+                window.requestTable.add(requestData);
+                console.log('set fetch data to db success!')
             }
         }).catch(err => console.error(err));
 
     return response;
 };
-
-// eslint-disable-next-line no-unused-vars
-async function cloneFetchResponse(response) {
-  console.log(response)
-}
 
 console.log('this is inject')

@@ -1,14 +1,7 @@
 <template>
-<!--    <transition name="fade" mode="out-in">-->
-<!--        <div v-if="!visible">-->
-<!--            <div class="button-box" v-drag draggable="false">-->
-<!--                <el-button class="button-badge" circle v-on:dblclick="visible = !visible" />-->
-<!--                <div style="text-align: center">性能监视器(双击打开)</div>-->
-<!--            </div>-->
-<!--        </div>-->
-<!--        <div class="box-card-parent">-->
             <el-card
-                    :body-style="{ width: '100%', height: '100%', borderRadius: '1rem', padding: '10px' }"
+                    :body-style="{ width: '100%', height: '100%', padding: '10px' }"
+                    style="height: 100%"
             >
                 <template #header>
                     <!--					<el-select-->
@@ -98,8 +91,6 @@
                     <!--					<el-table-column fixed prop="duration" sortable resizable label="消耗时间ms" width="auto" />-->
                 </el-table>
             </el-card>
-<!--        </div>-->
-<!--    </transition>-->
 </template>
 
 <script>

@@ -7,22 +7,22 @@
             </div>
         </div>
         <div v-else class="box-card-parent">
-            <el-card class="box-card" :body-style="{ width: '100%', height: '90%', borderRadius: '1rem', padding: '10px' }">
+            <el-card class="box-card" :body-style="{ width: '100%', height: '100%', borderRadius: '1rem', padding: '10px' }">
+                <el-button style="position: absolute;right: 1rem;top: .5rem;z-index: 5000;" type="success" @click="data.visible=false"
+                >隐藏</el-button>
                 <el-tabs
                     v-model="data.activeName"
                     type="card"
-                    class="demo-tabs"
+                    style="height: 100%;display: flex;flex-direction: column;"
                     @tab-click="handleClick"
                 >
-                    <el-tab-pane label="抓包" name="first">
+                    <el-tab-pane label="抓包" name="first" style="height: 100%">
                         <Debugger/>
                     </el-tab-pane>
-                    <el-tab-pane label="Performance" name="second">
+                    <el-tab-pane label="Performance" name="second" style="height: 100%">
                         <Performance/>
                     </el-tab-pane>
                 </el-tabs>
-                <el-button style="position: absolute;right: 1rem;top: .5rem;" type="success" @click="data.visible=false"
-                >隐藏</el-button>
             </el-card>
         </div>
     </transition>
@@ -32,7 +32,6 @@
 import Debugger  from './pages/Debugger.vue'
 import Performance  from './pages/Performance.vue'
 import {onMounted, reactive} from "vue";
-// import { Dexie } from "dexie";
 
 let data =reactive({
     visible: false,
@@ -43,22 +42,7 @@ let data =reactive({
 const handleClick = (tab, event) => {
     // console.log(tab, event)
 }
-onMounted(()=>{
-  // const dbName = window.location.hostname;
-// console.log(dbName);
-// eslint-disable-next-line no-undef,no-unused-vars
-// const db = new Dexie(dbName);
-// db.version(1).stores({
-//     users: "++id, name, age, emial",
-//     students: "++id, &username",
-//     books: "id, author, name, *categories"
-// });
-//   db.users.add({
-//     name: '张三',
-//     age: 18,
-//     email: 'xxxx@xx.com.cn'
-//   })
-})
+onMounted(()=>{})
 </script>
 
 <style scoped>
@@ -140,5 +124,9 @@ onMounted(()=>{
 }
 .network-info{
 
+}
+:deep(.el-tabs__content) {
+    flex: 1;
+    overflow: auto;
 }
 </style>
