@@ -2,7 +2,7 @@
 	"manifest_version": 2,
 	"name": "性能指标获取",
 	"description": "用于获取网站在用户端的性能数据，便于运维排查网络问题",
-	"version": "1.0.0",
+	"version": "1.2.0",
 	"browser_action": {
 		"default_title": "plugin-base-vue3",
 		"default_icon": "assets/images/icon48.png",
