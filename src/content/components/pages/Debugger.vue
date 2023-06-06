@@ -112,6 +112,7 @@
         :with-header="false"
         :show-close="false"
         size="80%"
+        destroy-on-close
     >
         <el-descriptions
             class="margin-top"
@@ -120,7 +121,9 @@
             border
         >
             <template #extra>
-                <el-button type="primary" @click="data.drawerVisible = false">关闭</el-button>
+                <el-affix :offset="10">
+                    <el-button type="primary" @click="data.drawerVisible = false">关闭</el-button>
+                </el-affix>
             </template>
             <el-descriptions-item>
                 <template #label>
