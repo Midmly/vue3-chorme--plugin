@@ -34,7 +34,7 @@ import Performance  from './pages/Performance.vue'
 import {onMounted, reactive} from "vue";
 
 let data =reactive({
-    visible: false,
+    visible: true,
     activeName: 'first'
 })
 

@@ -1,7 +1,8 @@
 import { createApp } from 'vue';
 import App from './components/app.vue';
 import ElementPlus from 'element-plus';
-insertSourceScriptToHead('js/dexie.js');
+import { Dexie } from "dexie";
+insertSourceScriptToHead('js/dexie.js',true);
 initContent();
 
 function initContent () {
@@ -9,6 +10,7 @@ function initContent () {
 		chrome.storage.local.get(['DebugTabs'], function(result) {
 			if (Array.isArray(result.DebugTabs)) {
 				if (result.DebugTabs.includes(url)) {
+					inject();
 					joinContent(App);
 				}
 			} else {
@@ -22,7 +24,7 @@ function initContent () {
 function joinContent (element) {
 	const join = document.getElementById('joinContentApp')
 	if (join === null){
-		insertSourceScriptToHead('js/inject.js');
+		insertSourceScriptToHead('js/inject.js',false);
 		const link = document.createElement('link')
 		link.rel = 'stylesheet'
 		link.href = '//unpkg.com/element-plus/dist/index.css'
@@ -42,11 +44,38 @@ function joinContent (element) {
 
 //chrome的API接口,用于传输或监听数据信号
 chrome.runtime.onMessage.addListener(
-  function (request) {
-    if (request.cmd === "ContentInitFun") {
+  function (msg) {
+    if (msg.cmd === "ContentInitFun") {
 		joinContent(App)
-		chrome.runtime.sendMessage(chrome.runtime.id, {type: 'ajaxInject-backend', to: 'background'});
-    }
+    }else if (msg.type === 'Close-delete-DB') {
+		const dbName = 'requestDatabase-'+window.location.hostname;
+		const request = window.indexedDB.open(dbName);
+		request.onsuccess = function(event) {
+			const db = event.target.result;
+			// 关闭数据库连接
+			db.close();
+			// 在成功打开数据库后进行删除操作
+			deleteDatabase(dbName);
+		};
+	} else if (msg.type === 'webRequest-details') {
+        // console.log(msg.data)
+		try {
+			const date = new Date(); // 获取当前时间
+			// 减去 1 分钟
+			date.setMinutes(date.getMinutes() - 3);
+			// window.requestTable.where('url').startsWith(msg.data?.initiator).modify(record => {
+			window.requestTable.where('url').equals(msg.data?.url)
+				.and(record => record.requestTime >= date.getTime()).modify(record => {
+				record.addr = msg.data?.ip;
+			}).then(updatedCount => {
+				console.log(`Updated ip on ${updatedCount} records.`);
+			}).catch(error => {
+				console.log(error.toString());
+			});
+		}catch (e) {
+			console.log(e.toString());
+		}
+	}
   }
 );
 
@@ -58,33 +87,20 @@ function InsertOtherScript(path){
 }
 
 // eslint-disable-next-line no-unused-vars,no-unexpected-multiline
-function insertSourceScriptToHead(path){
+function insertSourceScriptToHead(path,async){
 	// 获取 body 元素
 	const headElement = document.head;
 	// 获取第一个子元素
 	const firstChild = headElement.firstChild;
 	const sourceScript = document.createElement('script')
 	sourceScript.setAttribute('type', 'text/javascript')
-	sourceScript.src = chrome.extension.getURL(path)
+	sourceScript.src = chrome.extension.getURL(path);
+	sourceScript.async = async;
 	// document.body.appendChild(sourceScript)
 	// 在第一个子元素之前插入新元素
 	headElement.insertBefore(sourceScript, firstChild);
 }
 
-// // 接收background.js传来的信息
-chrome.runtime.onMessage.addListener(msg => {
-	if (msg.type === 'Close-delete-DB') {
-		const dbName = 'requestDatabase-'+window.location.hostname;
-		const request = window.indexedDB.open(dbName);
-		request.onsuccess = function(event) {
-			const db = event.target.result;
-			// 关闭数据库连接
-			db.close();
-			// 在成功打开数据库后进行删除操作
-			deleteDatabase(dbName);
-		};
-	}
-});
 function deleteDatabase(dbName) {
 	// 删除数据库
 	const deleteRequest = window.indexedDB.deleteDatabase(dbName);
@@ -97,4 +113,16 @@ function deleteDatabase(dbName) {
 	deleteRequest.onblocked = function(event) {
 		console.error('IndexedDB database deletion blocked',event);
 	};
+}
+
+function inject(){
+	const dbName = 'requestDatabase-'+window.location.hostname;
+// eslint-disable-next-line no-undef,no-unused-vars
+	const db = new Dexie(dbName);
+	db.version(1).stores({
+		requests: '++id, url, addr, method, status, type, requestTime, responseTime, requestHeaders, responseHeaders, responseData'
+	});
+// 打开数据库
+// 将 requests 实例注册为全局变量
+	window.requestTable = db.table('requests');
 }

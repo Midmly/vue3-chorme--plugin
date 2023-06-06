@@ -9,6 +9,24 @@
         <el-col :span="1.5">
             <el-button type="success" @click="handleInit">刷新</el-button>
         </el-col>
+        <el-col :span="2">
+            <p style="float: right;top: 50%;position: relative;transform: translateY(-50%);margin-right: -.3rem;">
+                数据清理:
+            </p>
+        </el-col>
+        <el-col :span="2">
+            <select v-model="data.delInterval" class="sel01">
+                <option
+                    v-for="item in [{label: '所有',value: 0},{label: '10分钟前',value: 10},{label: '30分钟前',value: 30},{label: '1小时前',value: 60},{label: '3小时前',value: 180},{label: '6小时前',value: 360}]"
+                    :key="item.value"
+                    :label="item.label"
+                    :value="item.value"
+                />
+            </select>
+        </el-col>
+        <el-col :span="4">
+            <el-button type="warning" @click="handleDeleteByRequestTime">删除</el-button>
+        </el-col>
     </el-row>
     <el-table :data="data.list" style="width: 100%;height: 85%">
         <el-table-column sortable prop="url" label="域名" width="auto">
@@ -28,6 +46,17 @@
                             {{ scope.row.url }}
                         </el-tag>
                     </el-tooltip>
+            </template>
+        </el-table-column>
+        <el-table-column sortable prop="addr" label="remoteIP" width="160">
+            <template #default="scope">
+                <el-tag
+                    disable-transitions
+                    type="success"
+                    style="width: auto;max-width: 100%;overflow: hidden;"
+                >
+                    {{ scope.row.addr }}
+                </el-tag>
             </template>
         </el-table-column>
         <el-table-column sortable prop="method" label="method" width="100"/>
@@ -95,9 +124,15 @@
             </template>
             <el-descriptions-item>
                 <template #label>
-                        请求地址
+                        请求URL
                 </template>
                     <span style="word-break: break-word;background-color: bisque;">{{ data.selectObj.url }}</span>
+            </el-descriptions-item>
+            <el-descriptions-item>
+                <template #label>
+                    远端IP
+                </template>
+                <el-tag type="info">{{ data.selectObj.addr }}</el-tag>
             </el-descriptions-item>
             <el-descriptions-item>
                 <template #label>
@@ -184,6 +219,7 @@ let data =reactive({
     selectObj: {
         method: null,
         url: null,
+        ip: null,
         status: null,
         type: null,
         requestTime: null,
@@ -196,6 +232,7 @@ let data =reactive({
     selectText: {},
     drawerVisible: false,
     likeKeyword: '',
+    delInterval: 0
 })
 
 const handleView = (index, row) => {
@@ -271,7 +308,7 @@ const handleSearchByUrl = () => {
             data.pagination= {
                 total: list.length,
                 currentPage: 1,
-                pageSize: list.length,
+                pageSize: 30,
             }
         })
     }else {
@@ -279,9 +316,25 @@ const handleSearchByUrl = () => {
     }
 }
 
+const handleDeleteByRequestTime = () => {
+    const date = new Date(); // 获取当前时间
+    // 减去 interval*10 分钟
+    if (data.delInterval > 0){
+        date.setMinutes(date.getMinutes() - data.delInterval*10);
+    }
+    const belowKey = date.getTime();
+    window.requestTable.where('requestTime').below(belowKey).delete().then(() => {
+        ElMessage.success('数据删除成功')
+    }).catch(error => {
+        ElMessage.error('数据删除失败,err:' + error.toString());
+    }).finally(()=>{
+        handleInit();
+    })
+}
+
 const handleGetList = () => {
     const startIndex = (data.pagination.currentPage - 1) * data.pagination.pageSize; // 计算起始索引
-    window.requestTable.offset(startIndex).limit(data.pagination.pageSize).toArray().then(list => {
+    window.requestTable.orderBy('requestTime').reverse().offset(startIndex).limit(data.pagination.pageSize).toArray().then(list => {
         data.list = list;
     });
 }
@@ -301,5 +354,18 @@ onMounted(()=>{
 :deep(.el-table__inner-wrapper) {
     height: 100%;
 }
-
+.sel01{
+    display: inline-block;
+    position: relative;
+    z-index: 2;
+    font-size: 1rem;
+    line-height: 1.2rem;
+    width: 100%;
+    flex: 1;
+    background:#fff;
+    box-sizing:border-box;
+    border-radius:.4rem;
+    height: 100%;
+    border-color: #dbdbdb;
+}
 </style>

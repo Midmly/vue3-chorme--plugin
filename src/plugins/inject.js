@@ -2,7 +2,7 @@ const dbName = 'requestDatabase-'+window.location.hostname;
 // eslint-disable-next-line no-undef,no-unused-vars
 const db = new Dexie(dbName);
 db.version(1).stores({
-    requests: '++id, url, method, status, type, requestTime, responseTime, requestHeaders, responseHeaders, responseData'
+    requests: '++id, url, addr, method, status, type, requestTime, responseTime, requestHeaders, responseHeaders, responseData'
 });
 // 打开数据库
 // 将 requests 实例注册为全局变量
@@ -34,7 +34,8 @@ window.requestTable = db.table('requests');
             }
             const requestData = {
                 method: this._method,
-                url: this._url,
+                url: getFullURL(this._url),
+                addr: '0.0.0.0',
                 status: this.status,
                 type: 'xhr',
                 requestTime: startTime,
@@ -67,7 +68,8 @@ window.fetch = async (url, options) => {
                 (new Response(data)).json().then(resp=>{
                     const requestData = {
                         method: options?.method,
-                        url: url,
+                        url: getFullURL(url),
+                        addr: '0.0.0.0',
                         status: respClone.status,
                         type: 'fetch',
                         requestTime: startTime,
@@ -80,13 +82,14 @@ window.fetch = async (url, options) => {
                     window.requestTable.add(requestData);
                     console.log('set fetch data to db success!')
                 }).catch(err => {
-                    console.error(err)
+                    console.log(err.toString())
                 });
             } else if (data.type.includes('text/plain')) {
                 (new Response(data)).text().then(resp=>{
                     const requestData = {
                         method: options?.method,
-                        url: url,
+                        url: getFullURL(url),
+                        addr: '0.0.0.0',
                         status: respClone.status,
                         type: 'fetch',
                         requestTime: startTime,
@@ -99,12 +102,13 @@ window.fetch = async (url, options) => {
                     window.requestTable.add(requestData);
                     console.log('set fetch data to db success!')
                 }).catch(err => {
-                    console.error(err)
+                    console.log(err.toString())
                 });
             } else {
                 const requestData = {
                     method: options?.method,
-                    url: url,
+                    url: getFullURL(url),
+                    addr: '0.0.0.0',
                     status: respClone.status,
                     type: 'fetch',
                     requestTime: startTime,
@@ -117,9 +121,20 @@ window.fetch = async (url, options) => {
                 window.requestTable.add(requestData);
                 console.log('set fetch data to db success!')
             }
-        }).catch(err => console.error(err));
+        }).catch(err => {
+        console.log(err.toString())
+    });
 
     return response;
 };
+
+function getFullURL(url) {
+    try {
+        const parsedUrl = new URL(url);
+        return url
+    } catch (error) {
+        return window.location.origin + url;
+    }
+}
 
 console.log('this is inject')
